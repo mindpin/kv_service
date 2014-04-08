@@ -6,7 +6,7 @@ class KeyValue
   field :value, type: String
 
   validates :key, presence: true
-  validates :key, format: {with: /[a-zA-Z0-9_]+/}
+  validates :key, format: {with: /[a-zA-Z0-9]+/}
 
   embedded_in :scope
 end

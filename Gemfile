@@ -22,3 +22,5 @@ group :test do
   gem "rspec"
   gem "database_cleaner", "~> 1.2.0"
 end
+
+gem 'mongoid_taggable', '~> 1.1.1'
