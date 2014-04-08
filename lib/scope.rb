@@ -5,6 +5,7 @@ class Scope
   field :name, type: String
 
   embeds_many :key_values
+  embeds_many :key_tags
 
   belongs_to :user_store
 
@@ -19,9 +20,28 @@ class Scope
     get_record(key).value
   end
 
+  def set_key_tag(key, tags)
+    record = get_key_tag_record(key)
+    record.tags = tags
+    record.save
+    record
+  end
+
+  def get_key_tag(key)
+    get_key_tag_record(key)
+  end
+
+  def find_key_tag_by_tags(tags_array)
+    self.key_tags.tagged_with_all(tags_array)
+  end
+
   private
 
   def get_record(key)
     self.key_values.find_or_initialize_by(key: key)
+  end
+
+  def get_key_tag_record(key)
+    self.key_tags.find_or_initialize_by(key: key)
   end
 end

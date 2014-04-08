@@ -14,11 +14,13 @@ require 'sinatra/json'
 require "rest_client"
 require 'mongoid'
 require "multi_json"
+require 'mongoid_taggable'
 require File.expand_path("../../config/env",__FILE__)
 
 require "./lib/user_store"
 require "./lib/scope"
 require "./lib/key_value"
+require "./lib/key_tag"
 require "./lib/auth"
 
 class KVService < Sinatra::Base
@@ -70,10 +72,29 @@ class KVService < Sinatra::Base
       content_type :js
       "#{params[:callback]}(#{res})"
     end
+
+    def key_tag_res(&block)
+      store = UserStore.find_by(secret: params[:secret])
+      return 401 if !store
+
+      key_tag = block.call(store)
+
+      res = MultiJson.dump({
+        key:       params[:key],
+        tags:      key_tag.tags_array,
+        user_id:   store.uid,
+        user_name: store.name,
+        scope:     params[:scope]
+      })
+      content_type :json
+      return res if !params[:callback]
+      content_type :js
+      "#{params[:callback]}(#{res})"
+    end
   end
 
   before do
-    headers("Access-Control-Allow-Origin" => request.base_url)
+    headers("Access-Control-Allow-Origin" => "*")
   end
 
   get "/" do
@@ -105,4 +126,46 @@ class KVService < Sinatra::Base
       store.scope(params[:scope]).get(params[:key])
     end
   end
+
+
+  post "/write_tags" do
+    key_tag_res do |store|
+      store.scope(params[:scope]).set_key_tag(params[:key], params[:tags])  
+    end
+  end
+
+  get "/read_tags" do
+    key_tag_res do |store|
+      store.scope(params[:scope]).get_key_tag(params[:key])
+    end
+  end
+
+  get "/find_by_tags" do
+    store = UserStore.find_by(secret: params[:secret])
+    return 401 if !store
+
+    tags_array = params[:tags].split(KeyTag.tags_separator).map(&:strip).reject(&:blank?)
+    key_tags = store.scope(params[:scope]).find_key_tag_by_tags(tags_array)
+    keys = key_tags.map do |key_tag|
+      {
+        key:       key_tag.key, 
+        tags:      key_tag.tags_array,
+        scope:     params[:scope],
+        user_id:   store.uid,
+        user_name: store.name
+      }
+    end
+
+    res = MultiJson.dump({
+      input_tags:  tags_array,
+      scope:       params[:scope],
+      keys:        keys
+    })
+    content_type :json
+    return res if !params[:callback]
+    content_type :js
+    "#{params[:callback]}(#{res})"
+  end
+
+
 end
