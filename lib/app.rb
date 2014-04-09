@@ -115,6 +115,23 @@ class KVService < Sinatra::Base
     end
   end
 
+  get "/user_info" do
+    if !params[:secret].blank?
+      user = UserStore.find_by(secret: params[:secret])
+    elsif !params[:email].blank?
+      user = UserStore.find_by(email: params[:email])
+    end
+    res = MultiJson.dump({
+      user_id: user.uid,
+      :secret => user.secret,
+      :name   => user.name,
+      :email  => user.email,
+      :avatar => user.avatar
+    })
+    content_type :json
+    return res
+  end
+
   post "/write" do
     kv_res do |store|
       store.scope(params[:scope]).set(params[:key], params[:value])
