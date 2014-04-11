@@ -4,8 +4,8 @@ class Scope
 
   field :name, type: String
 
-  embeds_many :key_values
-  embeds_many :key_tags
+  has_many :key_values
+  has_many :key_tags
 
   belongs_to :user_store
 

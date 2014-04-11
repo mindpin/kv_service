@@ -12,7 +12,6 @@ describe KeyTag do
     json = JSON.parse(last_response.body)
     json.should == {"key"=>"1", "tags"=>[], "user_id"=>"9479", "user_name"=>"mindpin_test", "scope"=>"spec"}
 
-
     post "/write_tags", secret: @secret, scope: "spec", key: "1", tags: "a,b,c"
     json = JSON.parse(last_response.body)
     json.should == {"key"=>"1", "tags"=>["a","b","c"], "user_id"=>"9479", "user_name"=>"mindpin_test", "scope"=>"spec"}
@@ -20,7 +19,6 @@ describe KeyTag do
     get "/read_tags", secret: @secret, scope: "spec", key: "1"
     json = JSON.parse(last_response.body)
     json.should == {"key"=>"1", "tags"=>["a","b","c"], "user_id"=>"9479", "user_name"=>"mindpin_test", "scope"=>"spec"}    
-
 
 
     post "/write_tags", secret: @secret, scope: "spec", key: "2", tags: "a,b,d"

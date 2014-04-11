@@ -8,5 +8,5 @@ class KeyValue
   validates :key, presence: true
   validates :key, format: {with: /[a-zA-Z0-9]+/}
 
-  embedded_in :scope
+  belongs_to :scope
 end
