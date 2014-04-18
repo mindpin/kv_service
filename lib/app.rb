@@ -58,7 +58,7 @@ class KVService < Sinatra::Base
     end
 
     def kv_res(&block)
-      store = UserStore.find_by(secret: params[:secret])
+      store = Auth.find_by_secret(params[:secret])
       return 401 if !store
       res = MultiJson.dump({
         key:       params[:key],
@@ -74,7 +74,7 @@ class KVService < Sinatra::Base
     end
 
     def key_tag_res(&block)
-      store = UserStore.find_by(secret: params[:secret])
+      store = Auth.find_by_secret(params[:secret])
       return 401 if !store
 
       key_tag = block.call(store)
@@ -115,23 +115,6 @@ class KVService < Sinatra::Base
     end
   end
 
-  get "/user_info" do
-    if !params[:secret].blank?
-      user = UserStore.find_by(secret: params[:secret])
-    elsif !params[:email].blank?
-      user = UserStore.find_by(email: params[:email])
-    end
-    res = MultiJson.dump({
-      user_id: user.uid,
-      :secret => user.secret,
-      :name   => user.name,
-      :email  => user.email,
-      :avatar => user.avatar
-    })
-    content_type :json
-    return res
-  end
-
   post "/write" do
     kv_res do |store|
       store.scope(params[:scope]).set(params[:key], params[:value])
@@ -158,7 +141,7 @@ class KVService < Sinatra::Base
   end
 
   get "/find_by_tags" do
-    store = UserStore.find_by(secret: params[:secret])
+    store = Auth.find_by_secret(params[:secret])
     return 401 if !store
 
     tags_array = params[:tags].split(KeyTag.tags_separator).map(&:strip).reject(&:blank?)
