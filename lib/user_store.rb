@@ -1,5 +1,3 @@
-require "securerandom"
-
 class UserStore
   include Mongoid::Document
   include Mongoid::Timestamps
@@ -12,17 +10,10 @@ class UserStore
 
   has_many :scopes
 
-  before_save do
-    self.generate_secret! if !self.secret
-  end
-
   def scope(scope_name = nil)
     scope = self.scopes.find_or_initialize_by(name: scope_name)
     scope.save if scope.new_record?
     scope
   end
 
-  def generate_secret!
-    self.secret = SecureRandom.hex(16)
-  end
 end
