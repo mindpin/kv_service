@@ -91,6 +91,22 @@ class KVService < Sinatra::Base
       content_type :js
       "#{params[:callback]}(#{res})"
     end
+
+    def auth_around(&block)
+      begin
+        store = Auth.find_by_secret(params[:secret])
+        return 401 if !store
+        return block.call(store)
+      rescue Exception => ex
+        res = MultiJson.dump({
+          secret:     params[:secret],
+          error:      ex.message
+        })
+        content_type :json
+        status 500
+        return res
+      end
+    end
   end
 
   before do
@@ -167,5 +183,24 @@ class KVService < Sinatra::Base
     "#{params[:callback]}(#{res})"
   end
 
+  get "/read_tags_of_keys" do
+    auth_around do |store|
+      content_type :json
+      key_tags = store.scope(params[:scope]).get_key_tag_of_keys(params[:keys])
+      keys = key_tags.map do |key_tag|
+        {
+          key:       key_tag.key, 
+          tags:      key_tag.tags_array,
+          scope:     params[:scope],
+          user_id:   store.uid,
+          user_name: store.name
+        }
+      end
+      MultiJson.dump({
+        scope:       params[:scope],
+        keys:        keys
+      })
+    end
+  end
 
 end

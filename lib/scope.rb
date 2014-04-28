@@ -31,6 +31,12 @@ class Scope
     get_key_tag_record(key)
   end
 
+  def get_key_tag_of_keys(keys)
+    keys.split(",").map do |key|
+      get_key_tag_record(key)
+    end
+  end
+
   def find_key_tag_by_tags(tags_array)
     self.key_tags.tagged_with_all(tags_array)
   end
