@@ -17,6 +17,7 @@ require "multi_json"
 require 'mongoid_taggable'
 require File.expand_path("../../config/env",__FILE__)
 
+require "./lib/tag_use_status"
 require "./lib/user_store"
 require "./lib/scope"
 require "./lib/key_value"

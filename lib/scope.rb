@@ -6,6 +6,7 @@ class Scope
 
   has_many :key_values
   has_many :key_tags
+  has_many :tag_use_statuses
 
   belongs_to :user_store
 
