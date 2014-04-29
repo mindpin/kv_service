@@ -1,7 +1,7 @@
 require "spec_helper"
 
 describe TagUseStatus do
-  before :all do
+  before do
     post "/login", login: "test@mindpin.com", password: "123456"
     @secret = UserStore.find_by(email: CGI.unescape("test@mindpin.com")).secret
     @secret.should_not == nil
@@ -84,7 +84,6 @@ describe TagUseStatus do
     @store.scope(scope).set_key_tag(key4, "a,b,c")
     @store.scope(scope).set_key_tag(key5, "a,b")
     @store.scope(scope).set_key_tag(key6, "a")
-
     @store.scope(scope).hot_tags(4).to_a.map do |ts|
       {tag: ts.tag, use_count: ts.use_count}
     end.should == [
@@ -93,8 +92,8 @@ describe TagUseStatus do
       {:tag=>"c", :use_count=>4},
       {:tag=>"d", :use_count=>3}
     ]
-
   }
+
 
   it{
     scope = "rspec"
@@ -127,5 +126,6 @@ describe TagUseStatus do
     @store.scope(scope).recent_tags(4).to_a.map do |ts|
       {tag: ts.tag}
     end.should == [{:tag=>"f"}, {:tag=>"e"}, {:tag=>"d"}, {:tag=>"c"}]
+
   }
 end

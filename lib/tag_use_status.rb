@@ -9,7 +9,15 @@ class TagUseStatus
   belongs_to :scope
 
   def last_use_at_str
-    last_use_at.strftime("%Y-%m-%d %H:%M:%S %z")
+    last_use_at.strftime("%Y-%m-%d %H:%M:%S")
+  end
+
+  def to_hash
+    {
+      tag: tag,
+      use_count: use_count,
+      last_use_at: last_use_at_str
+    }
   end
 
   def self.increment_use_count(scope, tag)

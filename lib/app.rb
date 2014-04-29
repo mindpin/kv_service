@@ -204,4 +204,29 @@ class KVService < Sinatra::Base
     end
   end
 
+  get "/read_hot_tags" do
+    auth_around do |store|
+      content_type :json
+      tag_use_statuses = store.scope(params[:scope]).hot_tags(params[:count])
+      MultiJson.dump({
+        scope:       params[:scope],
+        tags:        tag_use_statuses.map(&:to_hash),
+        user_id:     store.uid,
+        user_name:   store.name
+      })
+    end
+  end
+
+  get "/read_recent_tags" do
+    auth_around do |store|
+      content_type :json
+      tag_use_statuses = store.scope(params[:scope]).recent_tags(params[:count])
+      MultiJson.dump({
+        scope:       params[:scope],
+        tags:        tag_use_statuses.map(&:to_hash),
+        user_id:     store.uid,
+        user_name:   store.name
+      })
+    end
+  end
 end
