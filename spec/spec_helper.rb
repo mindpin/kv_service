@@ -6,6 +6,7 @@ Bundler.require(:test)
 
 # controler 层测试需要的配置
 require 'rack/test'
+require 'timecop'
 
 module RSpecMixin
   include Rack::Test::Methods

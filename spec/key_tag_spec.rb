@@ -65,4 +65,47 @@ describe KeyTag do
 
   }
 
+  describe "read_tags_of_keys" do
+    before{
+      post "/write_tags", secret: @secret, scope: "spec", key: "1", tags: "a,b,c"
+      post "/write_tags", secret: @secret, scope: "spec", key: "2", tags: "b,c"
+    }
+
+    it{
+      get "/read_tags_of_keys", secret: "1", scope: "spec", keys: "1,3"
+      last_response.status.should == 401
+      last_response.body.should == ""
+    }
+
+    it{
+      get "/read_tags_of_keys", secret: @secret, scope: "spec", key: "1,3"
+      last_response.status.should == 500
+      JSON.parse(last_response.body)["error"].should == "undefined method `split' for nil:NilClass"
+    }
+
+
+    it{
+      get "/read_tags_of_keys", secret: @secret, scope: "spec", keys: "1,3"
+      JSON.parse(last_response.body).should == {
+        "scope"=> "spec", 
+        "keys"=>[
+          {
+            "key"=>"1", 
+            "tags"=>["a", "b", "c"], 
+            "scope"=>"spec", 
+            "user_id"=>"9479", 
+            "user_name"=>"mindpin_test"
+          }, 
+          {
+            "key"=>"3", 
+            "tags"=>[], 
+            "scope"=>"spec", 
+            "user_id"=>"9479", 
+            "user_name"=>"mindpin_test"
+          }
+        ]
+      }
+    }
+  end
+
 end

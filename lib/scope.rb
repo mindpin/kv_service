@@ -6,6 +6,7 @@ class Scope
 
   has_many :key_values
   has_many :key_tags
+  has_many :tag_use_statuses
 
   belongs_to :user_store
 
@@ -31,8 +32,22 @@ class Scope
     get_key_tag_record(key)
   end
 
+  def get_key_tag_of_keys(keys)
+    keys.split(",").map do |key|
+      get_key_tag_record(key)
+    end
+  end
+
   def find_key_tag_by_tags(tags_array)
     self.key_tags.tagged_with_all(tags_array)
+  end
+
+  def hot_tags(count)
+    self.tag_use_statuses.order_by(use_count: -1).limit(count)
+  end
+
+  def recent_tags(count)
+    self.tag_use_statuses.order_by(last_use_at: -1).limit(count)
   end
 
   private

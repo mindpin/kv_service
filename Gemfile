@@ -24,3 +24,4 @@ group :test do
 end
 
 gem 'mongoid_taggable', '~> 1.1.1'
+gem 'timecop', '0.6.1'
