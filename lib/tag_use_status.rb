@@ -2,14 +2,14 @@ class TagUseStatus
   include Mongoid::Document
   include Mongoid::Timestamps
 
-  field :name, type: String
+  field :tag, type: String
   field :use_count, type: Integer
   field :last_use_at, type: DateTime
   
   belongs_to :scope
 
   def self.increment_use_count(scope, tag)
-    us = scope.tag_use_statuses.find_or_initialize_by(name: tag)
+    us = scope.tag_use_statuses.find_or_initialize_by(tag: tag)
     us.use_count = 0 if us.use_count.blank?
     us.use_count += 1
     us.last_use_at = Time.now
@@ -17,7 +17,7 @@ class TagUseStatus
   end
 
   def self.decrement_use_count(scope, tag)
-    us = scope.tag_use_statuses.find_by(name: tag)
+    us = scope.tag_use_statuses.find_by(tag: tag)
     return if us.blank?
     us.use_count -= 1
     us.save

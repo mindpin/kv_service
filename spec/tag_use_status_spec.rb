@@ -9,7 +9,7 @@ describe TagUseStatus do
   end
 
   def tag_use_count(scope, tag_name)
-    @store.scope(scope).tag_use_statuses.where(:name => tag_name).first.use_count
+    @store.scope(scope).tag_use_statuses.where(:tag => tag_name).first.use_count
   end
 
   it{
