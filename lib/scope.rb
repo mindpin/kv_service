@@ -42,6 +42,14 @@ class Scope
     self.key_tags.tagged_with_all(tags_array)
   end
 
+  def hot_tags(count)
+    self.tag_use_statuses.order_by(use_count: -1).limit(count)
+  end
+
+  def recent_tags(count)
+    self.tag_use_statuses.order_by(last_use_at: -1).limit(count)
+  end
+
   private
 
   def get_record(key)

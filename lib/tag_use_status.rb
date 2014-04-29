@@ -8,6 +8,10 @@ class TagUseStatus
   
   belongs_to :scope
 
+  def last_use_at_str
+    last_use_at.strftime("%Y-%m-%d %H:%M:%S %z")
+  end
+
   def self.increment_use_count(scope, tag)
     us = scope.tag_use_statuses.find_or_initialize_by(tag: tag)
     us.use_count = 0 if us.use_count.blank?
@@ -34,4 +38,5 @@ class TagUseStatus
       end
     end
   end
+
 end
