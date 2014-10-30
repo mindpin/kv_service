@@ -3,10 +3,6 @@ class UserStore
   include Mongoid::Timestamps
 
   field :secret, type: String
-  field :uid,    type: String
-  field :name,   type: String
-  field :email,  type: String
-  field :avatar, type: String
 
   has_many :scopes
 
@@ -14,6 +10,12 @@ class UserStore
     scope = self.scopes.find_or_initialize_by(name: scope_name)
     scope.save if scope.new_record?
     scope
+  end
+
+  def self.find_by_secret(secret)
+    store = self.find_or_initialize_by(secret: secret)
+    store.save if store.new_record?
+    store
   end
 
 end

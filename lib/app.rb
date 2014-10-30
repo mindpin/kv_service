@@ -1,7 +1,6 @@
 require "bundler"
 Bundler.setup(:default)
 require "sinatra"
-require "sinatra/cookies"
 require "sinatra/reloader"
 require 'sinatra/assetpack'
 require "pry"
@@ -22,16 +21,13 @@ require "./lib/user_store"
 require "./lib/scope"
 require "./lib/key_value"
 require "./lib/key_tag"
-require "./lib/auth"
 
 class KVService < Sinatra::Base
   configure :development do
     register Sinatra::Reloader
   end
 
-  set :views, ["templates"]
   set :root, File.expand_path("../../", __FILE__)
-  set :cookie_options, :domain => nil
   register Sinatra::AssetPack
 
   assets {
@@ -51,21 +47,12 @@ class KVService < Sinatra::Base
     js_compression  :uglify
   }
 
-  helpers Sinatra::Cookies
-
   helpers do
-    def current_store
-      Auth.current_store(self)
-    end
-
     def kv_res(&block)
-      store = Auth.find_by_secret(params[:secret])
-      return 401 if !store
+      store = UserStore.find_by_secret(params[:secret])
       res = MultiJson.dump({
         key:       params[:key],
         value:     block.call(store),
-        user_id:   store.uid,
-        user_name: store.name,
         scope:     params[:scope]
       })
       content_type :json
@@ -75,16 +62,13 @@ class KVService < Sinatra::Base
     end
 
     def key_tag_res(&block)
-      store = Auth.find_by_secret(params[:secret])
-      return 401 if !store
+      store = UserStore.find_by_secret(params[:secret])
 
       key_tag = block.call(store)
 
       res = MultiJson.dump({
         key:       params[:key],
         tags:      key_tag.tags_array,
-        user_id:   store.uid,
-        user_name: store.name,
         scope:     params[:scope]
       })
       content_type :json
@@ -95,8 +79,7 @@ class KVService < Sinatra::Base
 
     def auth_around(&block)
       begin
-        store = Auth.find_by_secret(params[:secret])
-        return 401 if !store
+        store = UserStore.find_by_secret(params[:secret])
         return block.call(store)
       rescue Exception => ex
         res = MultiJson.dump({
@@ -112,24 +95,6 @@ class KVService < Sinatra::Base
 
   before do
     headers("Access-Control-Allow-Origin" => "*")
-  end
-
-  get "/" do
-    redirect to("/login") if !current_store
-    haml :index
-  end
-
-  get "/login" do
-    haml :login
-  end
-
-  post "/login" do
-    begin
-      Auth.new(params[:login], params[:password], self).login!
-      200
-    rescue
-      401
-    end
   end
 
   post "/write" do
@@ -158,8 +123,7 @@ class KVService < Sinatra::Base
   end
 
   get "/find_by_tags" do
-    store = Auth.find_by_secret(params[:secret])
-    return 401 if !store
+    store = UserStore.find_by_secret(params[:secret])
 
     tags_array = params[:tags].split(KeyTag.tags_separator).map(&:strip).reject(&:blank?)
     key_tags = store.scope(params[:scope]).find_key_tag_by_tags(tags_array)
@@ -167,9 +131,7 @@ class KVService < Sinatra::Base
       {
         key:       key_tag.key, 
         tags:      key_tag.tags_array,
-        scope:     params[:scope],
-        user_id:   store.uid,
-        user_name: store.name
+        scope:     params[:scope]
       }
     end
 
@@ -192,9 +154,7 @@ class KVService < Sinatra::Base
         {
           key:       key_tag.key, 
           tags:      key_tag.tags_array,
-          scope:     params[:scope],
-          user_id:   store.uid,
-          user_name: store.name
+          scope:     params[:scope]
         }
       end
       MultiJson.dump({
@@ -210,9 +170,7 @@ class KVService < Sinatra::Base
       tag_use_statuses = store.scope(params[:scope]).hot_tags(params[:count])
       MultiJson.dump({
         scope:       params[:scope],
-        tags:        tag_use_statuses.map(&:to_hash),
-        user_id:     store.uid,
-        user_name:   store.name
+        tags:        tag_use_statuses.map(&:to_hash)
       })
     end
   end
@@ -223,9 +181,7 @@ class KVService < Sinatra::Base
       tag_use_statuses = store.scope(params[:scope]).recent_tags(params[:count])
       MultiJson.dump({
         scope:       params[:scope],
-        tags:        tag_use_statuses.map(&:to_hash),
-        user_id:     store.uid,
-        user_name:   store.name
+        tags:        tag_use_statuses.map(&:to_hash)
       })
     end
   end

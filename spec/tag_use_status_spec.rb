@@ -2,10 +2,8 @@ require "spec_helper"
 
 describe TagUseStatus do
   before do
-    post "/login", login: "test@mindpin.com", password: "123456"
-    @secret = UserStore.find_by(email: CGI.unescape("test@mindpin.com")).secret
-    @secret.should_not == nil
-    @store = Auth.find_by_secret(@secret)
+    @secret = "a1s3d8f0ji7oe5rt4l3ks2df4o"
+    @store = UserStore.find_by_secret(@secret)
   end
 
   def tag_use_count(scope, tag_name)
