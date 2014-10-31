@@ -3,12 +3,17 @@ class Scope
   include Mongoid::Timestamps
 
   field :name, type: String
+  field :user_token, type: String
 
   has_many :key_values
   has_many :key_tags
   has_many :tag_use_statuses
 
-  belongs_to :user_store
+  def self.get(token, scope_name)
+    scope = self.find_or_initialize_by(name: scope_name, user_token: token)
+    scope.save if scope.new_record?
+    scope
+  end
 
   def set(key, value)
     record = get_record(key)
