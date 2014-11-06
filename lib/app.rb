@@ -1,7 +1,6 @@
 require "bundler"
 Bundler.setup(:default)
 require "sinatra"
-require "sinatra/cookies"
 require "sinatra/reloader"
 require 'sinatra/assetpack'
 require "pry"
@@ -18,20 +17,16 @@ require 'mongoid_taggable'
 require File.expand_path("../../config/env",__FILE__)
 
 require "./lib/tag_use_status"
-require "./lib/user_store"
 require "./lib/scope"
 require "./lib/key_value"
 require "./lib/key_tag"
-require "./lib/auth"
 
 class KVService < Sinatra::Base
   configure :development do
     register Sinatra::Reloader
   end
 
-  set :views, ["templates"]
   set :root, File.expand_path("../../", __FILE__)
-  set :cookie_options, :domain => nil
   register Sinatra::AssetPack
 
   assets {
@@ -51,21 +46,12 @@ class KVService < Sinatra::Base
     js_compression  :uglify
   }
 
-  helpers Sinatra::Cookies
-
   helpers do
-    def current_store
-      Auth.current_store(self)
-    end
-
     def kv_res(&block)
-      store = Auth.find_by_secret(params[:secret])
-      return 401 if !store
+      scope = Scope.get(params[:token], params[:scope])
       res = MultiJson.dump({
         key:       params[:key],
-        value:     block.call(store),
-        user_id:   store.uid,
-        user_name: store.name,
+        value:     block.call(scope),
         scope:     params[:scope]
       })
       content_type :json
@@ -75,16 +61,13 @@ class KVService < Sinatra::Base
     end
 
     def key_tag_res(&block)
-      store = Auth.find_by_secret(params[:secret])
-      return 401 if !store
+      scope = Scope.get(params[:token], params[:scope])
 
-      key_tag = block.call(store)
+      key_tag = block.call(scope)
 
       res = MultiJson.dump({
         key:       params[:key],
         tags:      key_tag.tags_array,
-        user_id:   store.uid,
-        user_name: store.name,
         scope:     params[:scope]
       })
       content_type :json
@@ -95,12 +78,11 @@ class KVService < Sinatra::Base
 
     def auth_around(&block)
       begin
-        store = Auth.find_by_secret(params[:secret])
-        return 401 if !store
-        return block.call(store)
+        scope = Scope.get(params[:token], params[:scope])
+        return block.call(scope)
       rescue Exception => ex
         res = MultiJson.dump({
-          secret:     params[:secret],
+          token:     params[:token],
           error:      ex.message
         })
         content_type :json
@@ -114,62 +96,41 @@ class KVService < Sinatra::Base
     headers("Access-Control-Allow-Origin" => "*")
   end
 
-  get "/" do
-    redirect to("/login") if !current_store
-    haml :index
-  end
-
-  get "/login" do
-    haml :login
-  end
-
-  post "/login" do
-    begin
-      Auth.new(params[:login], params[:password], self).login!
-      200
-    rescue
-      401
-    end
-  end
-
   post "/write" do
-    kv_res do |store|
-      store.scope(params[:scope]).set(params[:key], params[:value])
+    kv_res do |scope|
+      scope.set(params[:key], params[:value])
     end
   end
 
   get "/read" do
-    kv_res do |store|
-      store.scope(params[:scope]).get(params[:key])
+    kv_res do |scope|
+      scope.get(params[:key])
     end
   end
 
 
   post "/write_tags" do
-    key_tag_res do |store|
-      store.scope(params[:scope]).set_key_tag(params[:key], params[:tags])  
+    key_tag_res do |scope|
+      scope.set_key_tag(params[:key], params[:tags])  
     end
   end
 
   get "/read_tags" do
-    key_tag_res do |store|
-      store.scope(params[:scope]).get_key_tag(params[:key])
+    key_tag_res do |scope|
+      scope.get_key_tag(params[:key])
     end
   end
 
   get "/find_by_tags" do
-    store = Auth.find_by_secret(params[:secret])
-    return 401 if !store
+    scope = Scope.get(params[:token], params[:scope])
 
     tags_array = params[:tags].split(KeyTag.tags_separator).map(&:strip).reject(&:blank?)
-    key_tags = store.scope(params[:scope]).find_key_tag_by_tags(tags_array)
+    key_tags = scope.find_key_tag_by_tags(tags_array)
     keys = key_tags.map do |key_tag|
       {
         key:       key_tag.key, 
         tags:      key_tag.tags_array,
-        scope:     params[:scope],
-        user_id:   store.uid,
-        user_name: store.name
+        scope:     params[:scope]
       }
     end
 
@@ -185,16 +146,14 @@ class KVService < Sinatra::Base
   end
 
   get "/read_tags_of_keys" do
-    auth_around do |store|
+    auth_around do |scope|
       content_type :json
-      key_tags = store.scope(params[:scope]).get_key_tag_of_keys(params[:keys])
+      key_tags = scope.get_key_tag_of_keys(params[:keys])
       keys = key_tags.map do |key_tag|
         {
           key:       key_tag.key, 
           tags:      key_tag.tags_array,
-          scope:     params[:scope],
-          user_id:   store.uid,
-          user_name: store.name
+          scope:     params[:scope]
         }
       end
       MultiJson.dump({
@@ -205,27 +164,23 @@ class KVService < Sinatra::Base
   end
 
   get "/read_hot_tags" do
-    auth_around do |store|
+    auth_around do |scope|
       content_type :json
-      tag_use_statuses = store.scope(params[:scope]).hot_tags(params[:count])
+      tag_use_statuses = scope.hot_tags(params[:count])
       MultiJson.dump({
         scope:       params[:scope],
-        tags:        tag_use_statuses.map(&:to_hash),
-        user_id:     store.uid,
-        user_name:   store.name
+        tags:        tag_use_statuses.map(&:to_hash)
       })
     end
   end
 
   get "/read_recent_tags" do
-    auth_around do |store|
+    auth_around do |scope|
       content_type :json
-      tag_use_statuses = store.scope(params[:scope]).recent_tags(params[:count])
+      tag_use_statuses = scope.recent_tags(params[:count])
       MultiJson.dump({
         scope:       params[:scope],
-        tags:        tag_use_statuses.map(&:to_hash),
-        user_id:     store.uid,
-        user_name:   store.name
+        tags:        tag_use_statuses.map(&:to_hash)
       })
     end
   end
