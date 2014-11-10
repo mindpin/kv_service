@@ -25,3 +25,5 @@ end
 
 gem 'mongoid_taggable', '~> 1.1.1'
 gem 'timecop', '0.6.1'
+
+gem 'elasticsearch-model', git: 'git://github.com/elasticsearch/elasticsearch-rails.git'

@@ -2,6 +2,7 @@ class KeyTag
   include Mongoid::Document
   include Mongoid::Timestamps
   include Mongoid::Taggable
+  include StandardSearch
   disable_tags_index!
 
   field :key,   type: String
@@ -23,4 +24,6 @@ class KeyTag
     remove_tags.each { |tag| TagUseStatus.decrement_use_count(scope, tag) }
   end
 
+
+  standard :tags_array
 end

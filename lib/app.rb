@@ -16,6 +16,10 @@ require "multi_json"
 require 'mongoid_taggable'
 require File.expand_path("../../config/env",__FILE__)
 
+require 'elasticsearch/model'
+require "./lib/searchable"
+require "./lib/standard_search"
+
 require "./lib/tag_use_status"
 require "./lib/scope"
 require "./lib/key_value"
@@ -184,4 +188,20 @@ class KVService < Sinatra::Base
       })
     end
   end
+
+  get "/search" do
+    auth_around do |scope|
+      content_type :json
+      tag_use_statuses = scope.recent_tags(params[:count])
+      key_tags = KeyTag.standard_search(scope, params[:query], params[:count], params[:offset])
+      keys = key_tags.map do|key_tag|
+        {
+          key:       key_tag.key, 
+          tags:      key_tag.tags_array
+        }
+      end
+      MultiJson.dump(keys)
+    end
+  end
+
 end
