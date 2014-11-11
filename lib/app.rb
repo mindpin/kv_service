@@ -18,7 +18,6 @@ require File.expand_path("../../config/env",__FILE__)
 
 require 'elasticsearch/model'
 require "./lib/searchable"
-require "./lib/standard_search"
 
 require "./lib/tag_use_status"
 require "./lib/scope"
@@ -114,6 +113,7 @@ class KVService < Sinatra::Base
 
 
   post "/write_tags" do
+    binding.pry
     key_tag_res do |scope|
       scope.set_key_tag(params[:key], params[:tags])  
     end

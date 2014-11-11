@@ -2,7 +2,7 @@ class KeyTag
   include Mongoid::Document
   include Mongoid::Timestamps
   include Mongoid::Taggable
-  include StandardSearch
+  include Searchable
   disable_tags_index!
 
   field :key,   type: String
@@ -25,5 +25,5 @@ class KeyTag
   end
 
 
-  standard :tags_array
+  searchable :tags_array
 end
