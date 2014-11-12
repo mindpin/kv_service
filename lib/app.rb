@@ -113,7 +113,6 @@ class KVService < Sinatra::Base
 
 
   post "/write_tags" do
-    binding.pry
     key_tag_res do |scope|
       scope.set_key_tag(params[:key], params[:tags])  
     end
@@ -192,16 +191,17 @@ class KVService < Sinatra::Base
   get "/search" do
     auth_around do |scope|
       content_type :json
-      tag_use_statuses = scope.recent_tags(params[:count])
-      key_tags = KeyTag.standard_search(scope, params[:query], params[:count], params[:offset])
+
+      key_tags = scope.key_tags.quick_search(params[:q], params[:query], count: params[:count], offset: params[:offset])
+
       keys = key_tags.map do|key_tag|
         {
-          key:       key_tag.key, 
-          tags:      key_tag.tags_array
+          key:  key_tag.key, 
+          tags: key_tag.tags_array
         }
       end
+
       MultiJson.dump(keys)
     end
   end
-
 end
